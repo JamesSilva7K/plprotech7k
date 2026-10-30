@@ -111,7 +111,7 @@ export const PlayStoreDownloadCard: React.FC<PlayStoreDownloadCardProps> = ({
             <div className="flex items-center gap-1.5 min-w-0">
               <Smartphone className="w-3.5 h-3.5 text-[#01875f] shrink-0" />
               <span className={`truncate ${isCompact ? 'text-[10px]' : 'text-xs'}`}>
-                Compatível com seu Android ({apk.fileName})
+                Compatível com seu dispositivo Android
               </span>
             </div>
             <div className="flex items-center gap-1 shrink-0 ml-2">

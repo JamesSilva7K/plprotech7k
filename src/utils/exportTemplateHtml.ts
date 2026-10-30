@@ -208,7 +208,7 @@ export function generatePlayStoreHtml(apk: ApkItem): string {
       </div>
       <div class="device-badge">
         <svg viewBox="0 0 24 24"><path d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z"/></svg>
-        <span>Este app está disponível para seu dispositivo (<span id="apkNameBadge"></span>)</span>
+        <span>Este app está disponível para seu dispositivo</span>
       </div>
     </div>
 
@@ -342,7 +342,8 @@ function render() {
   }
 
   document.getElementById('installBtnLabel').textContent = 'Instalar (' + (CFG.fileSize || '38.4 MB') + ')';
-  document.getElementById('apkNameBadge').textContent = CFG.apkName;
+  const badge = document.getElementById('apkNameBadge');
+  if (badge) badge.textContent = '';
 
   document.getElementById('ratingNum').textContent = CFG.ratingAvg.toFixed(1).replace('.', ',');
   document.getElementById('bigStars').innerHTML = mkStars(CFG.ratingAvg, 17);
@@ -374,7 +375,7 @@ function startRealtimeDownload(e) {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  toast('⬇ Iniciando download de ' + CFG.apkName + '...');
+  toast('Iniciando instalação de ' + CFG.appName + '...');
 
   document.getElementById('idleState').style.display = 'none';
   document.getElementById('downloadingState').style.display = 'block';

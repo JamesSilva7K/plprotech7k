@@ -76,12 +76,12 @@ export const PlayStorePage: React.FC<PlayStorePageProps> = ({
             <button
               onClick={() => {
                 onDownloadApk(apk);
-                showPlayToast(`⬇ Baixando ${apk.fileName}...`);
+                showPlayToast(`⬇ Instalando ${apk.name}...`);
               }}
               className="flex items-center gap-1.5 px-3 py-1 bg-[#191B1F] hover:bg-[#252A30] text-[#27B9F2] border border-[#252A30] rounded-[6px] text-xs font-semibold transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Testar Download ({apk.fileName})</span>
+              <span>Testar Instalação</span>
             </button>
 
             <button
@@ -203,8 +203,8 @@ export const PlayStorePage: React.FC<PlayStorePageProps> = ({
               <span className="px-3 py-1 bg-[#f1f3f4] text-[#5f6368] rounded-full font-medium">
                 Atualizado em {apk.uploadedAt}
               </span>
-              <span className="px-3 py-1 bg-[#f1f3f4] text-[#5f6368] rounded-full font-medium font-mono">
-                Arquivo: {apk.fileName}
+              <span className="px-3 py-1 bg-[#f1f3f4] text-[#5f6368] rounded-full font-medium">
+                Versão {apk.versionName || '1.0.0'}
               </span>
             </div>
           </div>

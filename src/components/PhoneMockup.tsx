@@ -288,8 +288,8 @@ export const PhoneMockup: React.FC<PhoneMockupProps> = ({
                       <span className="px-2 py-0.5 bg-[#f1f3f4] text-[#5f6368] rounded-full">
                         {apk.category || 'Negócios'}
                       </span>
-                      <span className="px-2 py-0.5 bg-[#f1f3f4] text-[#5f6368] rounded-full font-mono">
-                        {apk.fileName}
+                      <span className="px-2 py-0.5 bg-[#f1f3f4] text-[#5f6368] rounded-full font-medium">
+                        Versão {apk.versionName || '1.0.0'}
                       </span>
                       <span className="px-2 py-0.5 bg-[#e6f4f1] text-[#01875f] rounded-full font-medium">
                         {apk.fileSize}

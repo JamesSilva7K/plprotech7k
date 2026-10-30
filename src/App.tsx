@@ -495,7 +495,7 @@ export default function App() {
           >
             {apks.map(a => (
               <option key={a.id} value={a.id} className="bg-[#111316] text-[#F5F7FA]">
-                {a.name} ({a.fileName})
+                {a.name}
               </option>
             ))}
           </select>
