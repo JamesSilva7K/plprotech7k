@@ -220,7 +220,11 @@ export default function App() {
           frameColor: selectedApk?.qrSettings?.frameColor || '#01875F',
           downloadToken,
           slug,
-          customDomain: selectedApk?.qrSettings?.customDomain || (typeof window !== 'undefined' ? window.location.origin : 'https://seu-dominio.vercel.app'),
+          customDomain:
+            selectedApk?.qrSettings?.customDomain ||
+            (typeof window !== 'undefined' && !window.location.origin.includes('localhost')
+              ? window.location.origin
+              : 'https://playstore-rosy.vercel.app'),
         },
       });
 
@@ -362,7 +366,10 @@ export default function App() {
         frameColor: '#01875F',
         downloadToken: '',
         slug: newSlug,
-        customDomain: typeof window !== 'undefined' ? window.location.origin : 'https://seu-dominio.vercel.app',
+        customDomain:
+          typeof window !== 'undefined' && !window.location.origin.includes('localhost')
+            ? window.location.origin
+            : 'https://playstore-rosy.vercel.app',
       },
     };
 

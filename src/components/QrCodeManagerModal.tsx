@@ -78,9 +78,12 @@ export function QrCodeManagerModal({
   const [logoRatio, setLogoRatio] = useState<number>(0.22);
   const [logoShape, setLogoShape] = useState<'rounded' | 'circle'>('rounded');
 
-  // Domínio e Criptografia
+  // Domínio e Criptografia (Padrão Oficial: https://playstore-rosy.vercel.app)
   const [customDomain, setCustomDomain] = useState(
-    apk.qrSettings?.customDomain || (typeof window !== 'undefined' ? window.location.origin : 'https://seu-dominio.vercel.app')
+    apk.qrSettings?.customDomain ||
+      (typeof window !== 'undefined' && !window.location.origin.includes('localhost')
+        ? window.location.origin
+        : 'https://playstore-rosy.vercel.app')
   );
   const [slug, setSlug] = useState(apk.qrSettings?.slug || generateQrSlug(apk.id));
   const [token, setToken] = useState(apk.qrSettings?.downloadToken || '');
