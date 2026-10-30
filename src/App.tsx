@@ -600,25 +600,27 @@ export default function App() {
                   </div>
                   <div>
                     <h3 className="text-xs font-bold text-[#F5F7FA] flex items-center gap-2">
-                      <span>QR Code Exclusivo & Link Blindado</span>
+                      <span>Gerador de Imagem do QR Code para Espelhamento de Câmera</span>
                       <span className="text-[10px] font-mono text-[#10B981] bg-[#10B981]/15 px-2 py-0.5 rounded-full">
-                        Ativo
+                        PNG • JPG • SVG • PDF A4
                       </span>
                     </h3>
                     <p className="text-[11px] text-[#9299A3] mt-0.5">
-                      Gere QR Code personalizado com logo, cores, moldura e token anti-invasão para compartilhamento.
+                      Gere a imagem do QR Code com molduras personalizadas, ícone central do APK e links inteligentes para o lead escanear pela câmera e instalar diretamente.
                     </p>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleOpenQrModal(selectedApk)}
-                  className="px-3.5 py-2 bg-[#01875F] hover:bg-[#029e6f] text-white rounded-[8px] text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 shadow-sm"
-                >
-                  <QrCode className="w-3.5 h-3.5" />
-                  <span>Configurar QR</span>
-                </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenQrModal(selectedApk)}
+                    className="px-3.5 py-2 bg-[#01875F] hover:bg-[#029e6f] text-white rounded-[8px] text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  >
+                    <QrCode className="w-3.5 h-3.5" />
+                    <span>Gerar Imagem QR</span>
+                  </button>
+                </div>
               </div>
 
               {/* Card 1: Anexo Real do Arquivo APK */}
