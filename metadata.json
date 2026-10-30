@@ -1,0 +1,6 @@
+{
+  "name": "APK Studio Pro - Gerenciador de APKs Android",
+  "description": "Painel desktop moderno para gerenciamento, personalização visual e acompanhamento de compilação de APKs Android.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
