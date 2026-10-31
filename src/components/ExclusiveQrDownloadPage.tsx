@@ -20,6 +20,7 @@ import {
 import { ApkItem } from '../types/apk';
 import { GooglePlayLogo } from './GooglePlayLogo';
 import { generateQrCodePng, QrCodeConfig } from '../utils/qrGenerator';
+import { recordLeadVisit, recordLeadDownload } from '../utils/realMetricsTracker';
 
 interface ExclusiveQrDownloadPageProps {
   apk: ApkItem;
@@ -53,6 +54,11 @@ export function ExclusiveQrDownloadPage({
     '#01875F'
   );
 
+  // Registra visita do lead em tempo real
+  useEffect(() => {
+    recordLeadVisit(apk.id);
+  }, [apk.id]);
+
   useEffect(() => {
     async function makeQr() {
       try {
@@ -78,6 +84,7 @@ export function ExclusiveQrDownloadPage({
 
   const handleStartDownload = () => {
     if (downloading) return;
+    recordLeadDownload(apk.id);
     setDownloading(true);
     setProgress(0);
 
@@ -215,6 +222,8 @@ export function ExclusiveQrDownloadPage({
                   </span>
                   <span className="text-xs text-[#5F6368]">•</span>
                   <span className="text-xs text-[#5F6368] font-mono">{apk.fileSize}</span>
+                  <span className="text-xs text-[#5F6368]">•</span>
+                  <span className="text-xs text-[#5F6368]">Criado em {apk.createdAt || apk.uploadedAt}</span>
                   <span className="text-xs text-[#5F6368]">•</span>
                   <span className="text-xs text-[#5F6368]">{apk.downloads || '100K+'} downloads</span>
                 </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft, ExternalLink, Download, Share2, Bookmark, Check, Shield, Star } from 'lucide-react';
 import { ApkItem } from '../types/apk';
 import { calculateValidatedMetrics } from '../utils/apkMetrics';
+import { recordLeadVisit } from '../utils/realMetricsTracker';
 import { GooglePlayLogo } from './GooglePlayLogo';
 import { PlayStoreDownloadCard } from './PlayStoreDownloadCard';
 import { generateVectorAppIcon } from '../data/appIcons';
@@ -24,6 +25,11 @@ export const PlayStorePage: React.FC<PlayStorePageProps> = ({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const metrics = calculateValidatedMetrics(apk.reviews);
+
+  // Registra visita do lead em tempo real
+  useEffect(() => {
+    recordLeadVisit(apk.id);
+  }, [apk.id]);
 
   const showPlayToast = (msg: string) => {
     setToastMessage(msg);
@@ -201,7 +207,7 @@ export const PlayStorePage: React.FC<PlayStorePageProps> = ({
 
             <div className="pt-2 flex flex-wrap gap-2 text-xs">
               <span className="px-3 py-1 bg-[#f1f3f4] text-[#5f6368] rounded-full font-medium">
-                Atualizado em {apk.uploadedAt}
+                Criado em {apk.createdAt || apk.uploadedAt}
               </span>
               <span className="px-3 py-1 bg-[#f1f3f4] text-[#5f6368] rounded-full font-medium">
                 Versão {apk.versionName || '1.0.0'}

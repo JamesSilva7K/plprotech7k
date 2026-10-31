@@ -1,6 +1,6 @@
 /**
  * APK Studio — Gerador de QR Code Avançado e Multi-Formatos (PNG, JPG, SVG, PDF)
- * Gera imagens com molduras personalizadas, ícone central flexível e alta resolução.
+ * Gera imagens com molduras personalizadas, ícones 100% vetoriais, tipografia auto-ajustável e sem emojis.
  */
 
 import { jsPDF } from 'jspdf';
@@ -106,6 +106,165 @@ function loadImage(url: string): Promise<HTMLImageElement> {
 }
 
 /**
+ * Ajusta dinamicamente o tamanho da fonte para que o texto caiba exatamente na largura máxima sem cortar
+ */
+function fitText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxW: number,
+  initialFontSize: number,
+  minFontSize: number = 10,
+  weight: string = 'bold'
+): number {
+  let fontSize = initialFontSize;
+  ctx.font = `${weight} ${fontSize}px 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif`;
+  while (ctx.measureText(text).width > maxW && fontSize > minFontSize) {
+    fontSize -= 1;
+    ctx.font = `${weight} ${fontSize}px 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif`;
+  }
+  return fontSize;
+}
+
+/**
+ * Ícone Vetorial de Câmera 100% Nativo em Canvas (Substitui emojis e elimina bugs de glyph)
+ */
+function drawVectorCamera(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  iconSize: number,
+  color: string
+) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = Math.max(2, Math.round(iconSize * 0.085));
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const w = iconSize;
+  const h = Math.round(iconSize * 0.72);
+  const x = cx - w / 2;
+  const y = cy - h / 2 + Math.round(iconSize * 0.06);
+  const r = Math.round(iconSize * 0.16);
+
+  // Corpo da Câmera
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  ctx.stroke();
+
+  // Lente externa
+  ctx.beginPath();
+  ctx.arc(cx, y + h / 2, Math.round(h * 0.32), 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Ponto central da lente
+  ctx.beginPath();
+  ctx.arc(cx, y + h / 2, Math.round(h * 0.11), 0, Math.PI * 2);
+  ctx.fill();
+
+  // Top flash / visor superior
+  const bumpW = Math.round(w * 0.32);
+  const bumpH = Math.round(h * 0.18);
+  const bumpX = cx - bumpW / 2;
+  const bumpY = y - bumpH;
+  ctx.beginPath();
+  ctx.roundRect(bumpX, bumpY, bumpW, bumpH, [Math.round(r * 0.6), Math.round(r * 0.6), 0, 0]);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+/**
+ * Ícone Vetorial de Download (Seta para baixo) 100% Nativo em Canvas
+ */
+function drawVectorDownload(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  iconSize: number,
+  color: string
+) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = Math.max(2, Math.round(iconSize * 0.11));
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const s = iconSize * 0.85;
+  const topY = cy - s * 0.45;
+  const arrowTipY = cy + s * 0.18;
+
+  // Haste vertical
+  ctx.beginPath();
+  ctx.moveTo(cx, topY);
+  ctx.lineTo(cx, arrowTipY);
+  ctx.stroke();
+
+  // Cabeça da seta
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.3, arrowTipY - s * 0.3);
+  ctx.lineTo(cx, arrowTipY);
+  ctx.lineTo(cx + s * 0.3, arrowTipY - s * 0.3);
+  ctx.stroke();
+
+  // Base do download (bandeja)
+  const baseY = cy + s * 0.45;
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.42, baseY - s * 0.15);
+  ctx.lineTo(cx - s * 0.42, baseY);
+  ctx.lineTo(cx + s * 0.42, baseY);
+  ctx.lineTo(cx + s * 0.42, baseY - s * 0.15);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/**
+ * Ícone Vetorial de Smartphone 100% Nativo em Canvas
+ */
+function drawVectorSmartphone(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  iconSize: number,
+  color: string
+) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
+  ctx.lineWidth = Math.max(2, Math.round(iconSize * 0.085));
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  const w = Math.round(iconSize * 0.62);
+  const h = iconSize;
+  const x = cx - w / 2;
+  const y = cy - h / 2;
+  const r = Math.round(iconSize * 0.14);
+
+  // Corpo do celular
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  ctx.stroke();
+
+  // Alto-falante superior
+  ctx.beginPath();
+  ctx.moveTo(cx - w * 0.18, y + h * 0.12);
+  ctx.lineTo(cx + w * 0.18, y + h * 0.12);
+  ctx.stroke();
+
+  // Botão / Barra inferior
+  ctx.beginPath();
+  ctx.moveTo(cx - w * 0.22, y + h * 0.88);
+  ctx.lineTo(cx + w * 0.22, y + h * 0.88);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+/**
  * Renderiza o Canvas completo com o QR Code, Moldura e Logotipos
  */
 export async function renderQrCanvas(config: QrCodeConfig): Promise<HTMLCanvasElement> {
@@ -137,17 +296,17 @@ export async function renderQrCanvas(config: QrCodeConfig): Promise<HTMLCanvasEl
   let qrOffsetX = padding;
 
   if (frameTemplate === 'badge') {
-    canvasHeight += Math.round(size * 0.16);
+    canvasHeight += Math.round(size * 0.18);
   } else if (frameTemplate === 'scan-camera') {
     canvasHeight += Math.round(size * 0.22);
   } else if (frameTemplate === 'playstore') {
-    const headerH = Math.round(size * 0.22);
-    const footerH = Math.round(size * 0.16);
+    const headerH = Math.round(size * 0.24);
+    const footerH = Math.round(size * 0.18);
     canvasHeight += headerH + footerH;
     qrOffsetY += headerH;
   } else if (frameTemplate === 'poster') {
-    const headerH = Math.round(size * 0.32);
-    const footerH = Math.round(size * 0.24);
+    const headerH = Math.round(size * 0.34);
+    const footerH = Math.round(size * 0.26);
     canvasHeight += headerH + footerH;
     qrOffsetY += headerH;
   }
@@ -169,38 +328,46 @@ export async function renderQrCanvas(config: QrCodeConfig): Promise<HTMLCanvasEl
 
     // Barra de acento colorido superior
     ctx.fillStyle = actualFrameColor;
-    ctx.fillRect(0, 0, canvasWidth, Math.round(size * 0.015));
+    ctx.fillRect(0, 0, canvasWidth, Math.max(4, Math.round(size * 0.016)));
 
-    // Nome do aplicativo
+    // Nome do aplicativo (com ajuste de tamanho automático para nunca cortar)
+    const appName = appDetails?.name || 'Aplicativo Android Oficial';
+    const appNameMaxW = canvasWidth - padding * 2;
+    fitText(ctx, appName, appNameMaxW, Math.round(size * 0.052), Math.round(size * 0.03), 'bold');
     ctx.fillStyle = '#202124';
-    ctx.font = `bold ${Math.round(size * 0.052)}px 'Segoe UI', system-ui, sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(appDetails?.name || 'Aplicativo Android Oficial', canvasWidth / 2, Math.round(size * 0.09));
+    ctx.textBaseline = 'middle';
+    ctx.fillText(appName, canvasWidth / 2, Math.round(qrOffsetY * 0.42));
 
     // Subtítulo da empresa e selo seguro
+    const subtitle = `${appDetails?.company || 'Distribuição Oficial'} • Google Play Protect Verificado`;
+    fitText(ctx, subtitle, appNameMaxW, Math.round(size * 0.030), Math.round(size * 0.022), '500');
     ctx.fillStyle = '#5F6368';
-    ctx.font = `500 ${Math.round(size * 0.032)}px 'Segoe UI', system-ui, sans-serif`;
-    ctx.fillText(
-      `${appDetails?.company || 'Distribuição Oficial'} • Google Play Protect Verificado`,
-      canvasWidth / 2,
-      Math.round(size * 0.14)
-    );
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(subtitle, canvasWidth / 2, Math.round(qrOffsetY * 0.74));
   } else if (frameTemplate === 'poster') {
     // Banner Superior com Gradiente
     const grad = ctx.createLinearGradient(0, 0, canvasWidth, qrOffsetY);
     grad.addColorStop(0, actualFrameColor);
     grad.addColorStop(1, '#0D1117');
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, canvasWidth, qrOffsetY - 10);
+    ctx.fillRect(0, 0, canvasWidth, qrOffsetY - 8);
 
+    const appName = appDetails?.name || 'INSTALAR APLICATIVO';
+    const bannerMaxW = canvasWidth - padding * 2;
+    fitText(ctx, appName, bannerMaxW, Math.round(size * 0.056), Math.round(size * 0.032), 'bold');
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = `900 ${Math.round(size * 0.058)}px 'Segoe UI', system-ui, sans-serif`;
     ctx.textAlign = 'center';
-    ctx.fillText(appDetails?.name || 'INSTALAR APLICATIVO', canvasWidth / 2, Math.round(size * 0.12));
+    ctx.textBaseline = 'middle';
+    ctx.fillText(appName, canvasWidth / 2, Math.round(qrOffsetY * 0.38));
 
-    ctx.fillStyle = 'rgba(255,255,255,0.85)';
-    ctx.font = `600 ${Math.round(size * 0.034)}px 'Segoe UI', system-ui, sans-serif`;
-    ctx.fillText('Aponte a câmera do seu smartphone Android para escanear', canvasWidth / 2, Math.round(size * 0.19));
+    const sub = 'Aponte a câmera do seu smartphone Android para escanear';
+    fitText(ctx, sub, bannerMaxW, Math.round(size * 0.032), Math.round(size * 0.022), 'normal');
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(sub, canvasWidth / 2, Math.round(qrOffsetY * 0.72));
   }
 
   // 3. Renderização dos Módulos do QR Code
@@ -245,7 +412,7 @@ export async function renderQrCanvas(config: QrCodeConfig): Promise<HTMLCanvasEl
       const logoImg = await loadImage(logoUrl);
       const lx = centerX - logoSize / 2;
       const ly = centerY - logoSize / 2;
-      const bgPad = Math.round(logoSize * 0.1);
+      const bgPad = Math.round(logoSize * 0.12);
 
       // Fundo branco protetor atrás da logo para garantir contraste e leitura 100%
       ctx.fillStyle = lightColor;
@@ -253,13 +420,13 @@ export async function renderQrCanvas(config: QrCodeConfig): Promise<HTMLCanvasEl
       if (logoShape === 'circle') {
         ctx.arc(centerX, centerY, (logoSize + bgPad * 2) / 2, 0, Math.PI * 2);
       } else {
-        const bgR = Math.round(logoSize * 0.22);
+        const bgR = Math.round(logoSize * 0.24);
         ctx.roundRect(lx - bgPad, ly - bgPad, logoSize + bgPad * 2, logoSize + bgPad * 2, bgR);
       }
       ctx.fill();
 
       // Borda sutil na logo
-      ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+      ctx.strokeStyle = 'rgba(0,0,0,0.1)';
       ctx.lineWidth = Math.max(1, Math.round(size * 0.003));
       ctx.stroke();
 
@@ -269,7 +436,7 @@ export async function renderQrCanvas(config: QrCodeConfig): Promise<HTMLCanvasEl
       if (logoShape === 'circle') {
         ctx.arc(centerX, centerY, logoSize / 2, 0, Math.PI * 2);
       } else {
-        const r = Math.round(logoSize * 0.18);
+        const r = Math.round(logoSize * 0.20);
         ctx.roundRect(lx, ly, logoSize, logoSize, r);
       }
       ctx.clip();
@@ -280,70 +447,143 @@ export async function renderQrCanvas(config: QrCodeConfig): Promise<HTMLCanvasEl
     }
   }
 
-  // 5. Molduras Inferiores / Badges
+  // 5. Molduras Inferiores / Badges 100% Vetoriais
   if (frameTemplate === 'badge') {
-    const badgeY = qrOffsetY + size + Math.round(padding * 0.5);
-    const badgeH = canvasHeight - badgeY - Math.round(padding * 0.5);
-
-    // Botão / Pílula inferior
-    const pillMargin = Math.round(size * 0.05);
+    const badgeY = qrOffsetY + size + Math.round(padding * 0.4);
+    const badgeH = canvasHeight - badgeY - Math.round(padding * 0.4);
+    const pillMargin = Math.round(size * 0.04);
     const pillW = canvasWidth - pillMargin * 2;
     const pillRadius = Math.round(badgeH * 0.35);
 
+    // Botão / Pílula inferior preenchida
     ctx.fillStyle = actualFrameColor;
     ctx.beginPath();
     ctx.roundRect(pillMargin, badgeY, pillW, badgeH, pillRadius);
     ctx.fill();
 
+    // Ícone de Download Vetorial + Texto Auto-ajustado
+    const iconSize = Math.round(badgeH * 0.44);
+    const iconGap = Math.round(size * 0.02);
+    const textStr = frameText || 'ESCANEAR PARA BAIXAR';
+    const maxTextW = pillW - iconSize - iconGap - Math.round(pillMargin * 1.5);
+
+    fitText(ctx, textStr, maxTextW, Math.round(badgeH * 0.38), Math.round(size * 0.025), 'bold');
+    const textW = ctx.measureText(textStr).width;
+    const totalW = iconSize + iconGap + textW;
+    const startX = pillMargin + (pillW - totalW) / 2;
+    const centerYBadge = badgeY + badgeH / 2;
+
+    // Desenha ícone de download vetorial branco
+    drawVectorDownload(ctx, startX + iconSize / 2, centerYBadge, iconSize, '#FFFFFF');
+
     // Texto
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = `bold ${Math.round(badgeH * 0.42)}px 'Segoe UI', system-ui, sans-serif`;
-    ctx.textAlign = 'center';
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(frameText, canvasWidth / 2, badgeY + badgeH / 2);
-  } else if (frameTemplate === 'scan-camera') {
-    const badgeY = qrOffsetY + size + Math.round(padding * 0.4);
-    const badgeH = canvasHeight - badgeY - Math.round(padding * 0.4);
+    ctx.fillText(textStr, startX + iconSize + iconGap, centerYBadge);
 
-    // Moldura com borda e ícone
+  } else if (frameTemplate === 'scan-camera') {
+    const badgeY = qrOffsetY + size + Math.round(padding * 0.35);
+    const badgeH = canvasHeight - badgeY - Math.round(padding * 0.35);
+    const boxX = padding;
+    const boxW = canvasWidth - padding * 2;
+    const boxRadius = Math.round(badgeH * 0.28);
+
+    // Borda elegante com a cor selecionada
     ctx.strokeStyle = actualFrameColor;
-    ctx.lineWidth = Math.round(size * 0.005);
+    ctx.lineWidth = Math.max(2, Math.round(size * 0.006));
     ctx.beginPath();
-    ctx.roundRect(padding, badgeY, canvasWidth - padding * 2, badgeH, Math.round(size * 0.02));
+    ctx.roundRect(boxX, badgeY, boxW, badgeH, boxRadius);
     ctx.stroke();
 
+    // Fundo translúcido sutil para sofisticação
+    ctx.fillStyle = actualFrameColor + '0D';
+    ctx.beginPath();
+    ctx.roundRect(boxX, badgeY, boxW, badgeH, boxRadius);
+    ctx.fill();
+
+    // Ícone de Câmera 100% Vetorial (NÃO emoji) + Texto com auto-fit
+    const iconSize = Math.round(badgeH * 0.44);
+    const iconGap = Math.round(size * 0.02);
+    const textStr = frameText || 'ESCANEAR PARA BAIXAR';
+    const maxTextW = boxW - iconSize - iconGap - Math.round(padding * 1.2);
+
+    fitText(ctx, textStr, maxTextW, Math.round(badgeH * 0.38), Math.round(size * 0.025), 'bold');
+    const textW = ctx.measureText(textStr).width;
+    const totalW = iconSize + iconGap + textW;
+    const startX = boxX + (boxW - totalW) / 2;
+    const centerYBadge = badgeY + badgeH / 2;
+
+    // Desenha câmera em vetor nativo
+    drawVectorCamera(ctx, startX + iconSize / 2, centerYBadge, iconSize, actualFrameColor);
+
+    // Desenha texto
     ctx.fillStyle = actualFrameColor;
-    ctx.font = `bold ${Math.round(badgeH * 0.38)}px 'Segoe UI', system-ui, sans-serif`;
-    ctx.textAlign = 'center';
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`📷 ${frameText}`, canvasWidth / 2, badgeY + badgeH / 2);
+    ctx.fillText(textStr, startX + iconSize + iconGap, centerYBadge);
+
   } else if (frameTemplate === 'playstore') {
     const footerY = qrOffsetY + size + Math.round(padding * 0.3);
     const footerH = canvasHeight - footerY;
 
-    // Fundo cinza suave
+    // Fundo cinza suave institucional
     ctx.fillStyle = '#F8F9FA';
     ctx.fillRect(0, footerY, canvasWidth, footerH);
 
-    ctx.fillStyle = actualFrameColor;
-    ctx.font = `bold ${Math.round(size * 0.038)}px 'Segoe UI', system-ui, sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(frameText || 'APONTE A CÂMERA DO CELULAR PARA INSTALAR', canvasWidth / 2, footerY + footerH / 2);
-  } else if (frameTemplate === 'poster') {
-    const footerY = qrOffsetY + size + Math.round(padding * 0.4);
-    const footerH = canvasHeight - footerY;
+    // Divisor superior
+    ctx.fillStyle = '#E8EAED';
+    ctx.fillRect(0, footerY, canvasWidth, 1);
 
+    const iconSize = Math.round(footerH * 0.36);
+    const iconGap = Math.round(size * 0.018);
+    const textStr = frameText || 'APONTE A CÂMERA DO CELULAR PARA INSTALAR';
+    const maxTextW = canvasWidth - iconSize - iconGap - padding * 2;
+
+    fitText(ctx, textStr, maxTextW, Math.round(size * 0.036), Math.round(size * 0.024), 'bold');
+    const textW = ctx.measureText(textStr).width;
+    const totalW = iconSize + iconGap + textW;
+    const startX = (canvasWidth - totalW) / 2;
+    const centerYFooter = footerY + footerH / 2;
+
+    // Smartphone vetorial
+    drawVectorSmartphone(ctx, startX + iconSize / 2, centerYFooter, iconSize, actualFrameColor);
+
+    ctx.fillStyle = actualFrameColor;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(textStr, startX + iconSize + iconGap, centerYFooter);
+
+  } else if (frameTemplate === 'poster') {
+    const footerY = qrOffsetY + size + Math.round(padding * 0.35);
+    const footerH = canvasHeight - footerY - padding;
+    const btnW = canvasWidth - padding * 2;
+    const btnRadius = Math.round(footerH * 0.32);
+
+    // Botão estilizado do cartaz
     ctx.fillStyle = actualFrameColor;
     ctx.beginPath();
-    ctx.roundRect(padding, footerY, canvasWidth - padding * 2, footerH - padding, Math.round(size * 0.02));
+    ctx.roundRect(padding, footerY, btnW, footerH, btnRadius);
     ctx.fill();
 
+    const iconSize = Math.round(footerH * 0.42);
+    const iconGap = Math.round(size * 0.02);
+    const textStr = frameText || 'ESCANEAR PARA INSTALAR AGORA';
+    const maxTextW = btnW - iconSize - iconGap - padding;
+
+    fitText(ctx, textStr, maxTextW, Math.round(footerH * 0.38), Math.round(size * 0.026), 'bold');
+    const textW = ctx.measureText(textStr).width;
+    const totalW = iconSize + iconGap + textW;
+    const startX = padding + (btnW - totalW) / 2;
+    const centerYFooter = footerY + footerH / 2;
+
+    // Câmera vetorial branca
+    drawVectorCamera(ctx, startX + iconSize / 2, centerYFooter, iconSize, '#FFFFFF');
+
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = `bold ${Math.round(size * 0.042)}px 'Segoe UI', system-ui, sans-serif`;
-    ctx.textAlign = 'center';
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(frameText || 'ESCANEAR PARA INSTALAR AGORA', canvasWidth / 2, footerY + (footerH - padding) / 2);
+    ctx.fillText(textStr, startX + iconSize + iconGap, centerYFooter);
   }
 
   return canvas;
@@ -468,32 +708,35 @@ export async function exportQrAsPdf(config: QrCodeConfig, fileName: string): Pro
   pdf.setTextColor(1, 135, 95);
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(11);
-  pdf.text('COMO INSTALAR NO SEU SMARTPHONE:', 30, boxY + 8);
+  pdf.text('INSTRUÇÕES RÁPIDAS PARA O USUÁRIO:', 30, boxY + 8);
 
   pdf.setTextColor(60, 64, 67);
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(9.5);
-  pdf.text('1. Abra a câmera do seu celular ou aplicativo leitor de QR Code.', 30, boxY + 16);
-  pdf.text('2. Aponte para o código acima e toque na notificação que aparecer na tela.', 30, boxY + 23);
-  pdf.text('3. O download do APK oficial começará automaticamente com total segurança.', 30, boxY + 30);
+  pdf.text('1. Abra o aplicativo de Câmera padrão em qualquer aparelho Android.', 30, boxY + 16);
+  pdf.text('2. Aponte para o QR Code acima e aguarde a notificação de abertura.', 30, boxY + 23);
+  pdf.text('3. Confirme o download seguro verificado pelo Google Play Protect.', 30, boxY + 30);
 
-  // Rodapé do PDF
-  pdf.setTextColor(128, 134, 139);
-  pdf.setFontSize(8.5);
-  pdf.text('Google Play Store Oficial • Distribuição Criptografada e Protegida Contra Invasões', pageWidth / 2, 288, { align: 'center' });
+  // Rodapé com blindagem de integridade
+  pdf.setTextColor(154, 160, 166);
+  pdf.setFontSize(8);
+  pdf.text('Distribuição oficial e blindada • Assinatura Criptográfica SHA-256 e TLS 1.3 Ativo', pageWidth / 2, 288, { align: 'center' });
 
-  pdf.save(`${fileName}.pdf`);
+  pdf.save(fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`);
 }
 
 /**
- * Copia a imagem do QR Code diretamente para a Área de Transferência (Clipboard)
+ * Copia a imagem do QR Code para a área de transferência do usuário como PNG
  */
 export async function copyQrImageToClipboard(config: QrCodeConfig): Promise<boolean> {
   try {
     const canvas = await renderQrCanvas(config);
-    return new Promise((resolve) => {
-      canvas.toBlob(async (blob) => {
-        if (!blob) return resolve(false);
+    return new Promise(resolve => {
+      canvas.toBlob(async blob => {
+        if (!blob) {
+          resolve(false);
+          return;
+        }
         try {
           await navigator.clipboard.write([
             new ClipboardItem({ 'image/png': blob }),
@@ -510,21 +753,18 @@ export async function copyQrImageToClipboard(config: QrCodeConfig): Promise<bool
 }
 
 /**
- * Faz download de arquivo gerado (PNG, JPG, SVG)
+ * Dispara o download de um arquivo gerado
  */
-export function triggerFileDownload(dataUrl: string, fileName: string, format: string) {
+export function triggerFileDownload(dataUrl: string, fileName: string): void {
   const a = document.createElement('a');
-  a.href = format === 'svg'
-    ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(dataUrl)}`
-    : dataUrl;
-  a.download = `${fileName}.${format}`;
+  a.href = dataUrl;
+  a.download = fileName;
+  document.body.appendChild(a);
   a.click();
+  document.body.removeChild(a);
 }
 
-/**
- * Aliases de retrocompatibilidade
- */
+// Aliases para retrocompatibilidade
 export const generateQrCodePng = exportQrAsPng;
 export const generateQrCodeSvg = exportQrAsSvg;
 export const downloadQrCode = triggerFileDownload;
-

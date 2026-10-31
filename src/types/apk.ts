@@ -31,6 +31,14 @@ export interface QrCustomization {
   qrCodeSig?: string;
 }
 
+export interface ApkLiveMetrics {
+  views: number;
+  downloads: number;
+  conversionRate: number;
+  lastLeadAt: string | null;
+  createdAt: string;
+}
+
 export interface ApkItem {
   id: string;
   name: string;
@@ -41,6 +49,8 @@ export interface ApkItem {
   fileName: string;
   fileSize: string;
   uploadedAt: string;
+  createdAt?: string; // Data e horário de criação da tela/APK
+  metrics?: ApkLiveMetrics; // Métricas reais de visitantes e downloads por APK
   iconSrc: string;
   ratingAvg: number;
   ratingTotal: string;

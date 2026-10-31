@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { ApkItem } from '../types/apk';
+import { recordLeadDownload } from './realMetricsTracker';
 
 export type DownloadStage = 'idle' | 'downloading' | 'verifying' | 'installed';
 
@@ -74,6 +75,9 @@ export function useRealtimeDownload({
   // Start real-time download
   const startDownload = useCallback(() => {
     if (stage === 'downloading' || stage === 'verifying') return;
+
+    // Registra download real do lead sincronizado
+    recordLeadDownload(apk.id);
 
     cleanup();
     setStage('downloading');

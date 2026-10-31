@@ -180,7 +180,7 @@ export function generatePlayStoreHtml(apk: ApkItem): string {
         <div class="app-name" id="appNameEl"></div>
         <div class="app-company" id="appCompanyEl"></div>
         <div class="app-meta">
-          <span class="chip"><span class="chip-dot">●</span><span id="ratingChip"></span> ★</span>
+          <span class="chip"><span class="chip-dot">●</span><span id="ratingChip"></span> <svg style="display:inline-block;vertical-align:-1.5px;width:12px;height:12px;fill:#f4b400;" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg></span>
           <span class="chip" id="dlChip"></span>
           <span class="chip">Livre</span>
           <span class="chip" id="catChip"></span>
@@ -305,10 +305,10 @@ const CFG = ${cfgJson};
 function mkStars(n, size) {
   let h = '';
   for (let i = 1; i <= 5; i++) {
-    let cls = 'st-empty';
-    if (i <= Math.floor(n)) cls = 'st-full';
-    else if (i - n < 1) cls = 'st-half';
-    h += '<span class="st ' + cls + '" style="font-size:' + size + 'px">★</span>';
+    let fill = '#dadce0';
+    if (i <= Math.floor(n)) fill = '#f4b400';
+    else if (i - n < 1) fill = '#f4b400';
+    h += '<svg style="width:' + size + 'px;height:' + size + 'px;display:inline-block;vertical-align:-1px;fill:' + fill + ';" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>';
   }
   return h;
 }

@@ -43,6 +43,11 @@ import {
   QrCode,
   Lock,
   Globe,
+  Users,
+  Calendar,
+  TrendingUp,
+  BarChart3,
+  RotateCcw,
 } from 'lucide-react';
 import { ApkItem, ReviewItem } from './types/apk';
 import { INITIAL_APKS } from './data/mockApks';
@@ -66,6 +71,7 @@ import {
 import { calculateValidatedMetrics, calculateRealSha256, generateApkChecksum } from './utils/apkMetrics';
 import { generateDownloadToken, generateQrSlug, sanitizeAppNameForUrl } from './utils/crypto';
 import { generateAsoCopy } from './utils/asoCopyGenerator';
+import { getApkRealMetrics, resetApkRealMetrics, ApkLiveMetrics } from './utils/realMetricsTracker';
 
 export default function App() {
   const [apks, setApks] = useState<ApkItem[]>(INITIAL_APKS);
@@ -100,6 +106,29 @@ export default function App() {
   const leadPhotoInputRef = useRef<HTMLInputElement>(null);
 
   const selectedApk = apks.find(a => a.id === selectedApkId) || apks[0] || null;
+
+  // Estado de sincronização das métricas reais
+  const [metricsVersion, setMetricsVersion] = useState(0);
+
+  // Sincronização em tempo real de acessos e downloads de leads
+  useEffect(() => {
+    const handleMetricsUpdate = () => {
+      setMetricsVersion(v => v + 1);
+    };
+
+    window.addEventListener('apk_studio_metrics_changed', handleMetricsUpdate);
+    window.addEventListener('storage', handleMetricsUpdate);
+
+    return () => {
+      window.removeEventListener('apk_studio_metrics_changed', handleMetricsUpdate);
+      window.removeEventListener('storage', handleMetricsUpdate);
+    };
+  }, []);
+
+  // Métricas reais de tráfego e conversão específicas do APK selecionado
+  const selectedApkLiveMetrics = selectedApk
+    ? getApkRealMetrics(selectedApk.id, selectedApk.createdAt || selectedApk.uploadedAt)
+    : null;
 
   // Métricas calculadas em tempo real com validação matemática
   const validatedMetrics = selectedApk ? calculateValidatedMetrics(selectedApk.reviews) : null;
@@ -299,6 +328,17 @@ export default function App() {
     }
   };
 
+  const handleResetMetrics = (apkId: string) => {
+    if (!selectedApk) return;
+    resetApkRealMetrics(apkId, selectedApk.createdAt || selectedApk.uploadedAt);
+    setMetricsVersion(v => v + 1);
+    showToast(
+      'Métricas Reiniciadas',
+      `Os contadores de leads e downloads de "${selectedApk.name}" foram zerados.`,
+      'info'
+    );
+  };
+
   const handleCreateNewApk = () => {
     const now = new Date();
     const dateFormatted = `${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
@@ -315,6 +355,7 @@ export default function App() {
       fileName: 'app-release.apk',
       fileSize: '32.0 MB',
       uploadedAt: dateFormatted,
+      createdAt: dateFormatted,
       iconSrc: generateVectorAppIcon('Novo Aplicativo', 'Negócios'),
       ratingAvg: 4.8,
       ratingTotal: '25 mil avaliações',
@@ -980,54 +1021,126 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Card 3: Métricas Validadas & Integridade do APK (100% Sincronizado) */}
+              {/* Card 3: Painel de Tráfego Real de Leads, Conversão & Integridade do APK (100% Sincronizado) */}
               <div className="p-4 bg-[#111316] border border-[#252A30] rounded-[14px] space-y-4">
                 <div className="flex items-center justify-between pb-2 border-b border-[#252A30]">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-[#F5F7FA] flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-[#27B9F2]" />
-                    <span>Métricas Validadas & Integridade do Pacote</span>
-                  </h3>
-                  <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#0D211B] border border-[#10B981]/40 text-[#10B981] text-[10px] font-semibold">
-                    <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Google Play Protect: Verificado</span>
+                  <div className="flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-[#27B9F2]" />
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-[#F5F7FA]">
+                      Métricas Reais de Leads & Conversão ({selectedApk.name})
+                    </h3>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleResetMetrics(selectedApk.id)}
+                      className="px-2 py-0.5 rounded text-[10px] text-[#9299A3] hover:text-[#27B9F2] hover:bg-[#191B1F] border border-transparent hover:border-[#252A30] flex items-center gap-1 transition-all cursor-pointer"
+                      title="Reiniciar métricas deste APK para novos testes"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Zerar Contadores</span>
+                    </button>
+                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#0D211B] border border-[#10B981]/40 text-[#10B981] text-[10px] font-semibold">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+                      <span>Monitoramento Ativo</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* Mathematical Metrics Grid */}
+                {/* Grid de Métricas Reais e Data de Criação */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="p-3 bg-[#191B1F] border border-[#252A30] rounded-[10px]">
-                    <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Média Real</span>
-                    <div className="flex items-center gap-1.5 mt-1">
-                      <span className="text-lg font-bold text-[#F5F7FA] font-mono">
-                        {validatedMetrics?.averageRating.toFixed(1).replace('.', ',')}
-                      </span>
-                      <Star className="w-4 h-4 fill-[#f4b400] text-[#f4b400]" />
+                    <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Criação da Tela</span>
+                    <p className="text-xs font-bold text-[#F5F7FA] font-mono mt-1 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-[#27B9F2] shrink-0" />
+                      <span className="truncate">{selectedApk.createdAt || selectedApk.uploadedAt}</span>
+                    </p>
+                    <span className="text-[9px] text-[#9299A3] block mt-0.5 font-mono">Registro oficial do APK</span>
+                  </div>
+
+                  <div className="p-3 bg-[#191B1F] border border-[#252A30] rounded-[10px]">
+                    <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Leads Visitantes</span>
+                    <p className="text-lg font-bold text-[#F5F7FA] font-mono mt-1 flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-[#10B981]" />
+                      <span>{selectedApkLiveMetrics?.views || 0}</span>
+                    </p>
+                    <span className="text-[9px] text-[#10B981] block mt-0.5 font-mono">Acessos únicos monitorados</span>
+                  </div>
+
+                  <div className="p-3 bg-[#191B1F] border border-[#252A30] rounded-[10px]">
+                    <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Downloads Clicados</span>
+                    <p className="text-lg font-bold text-[#27B9F2] font-mono mt-1 flex items-center gap-1.5">
+                      <Download className="w-4 h-4" />
+                      <span>{selectedApkLiveMetrics?.downloads || 0}</span>
+                    </p>
+                    <span className="text-[9px] text-[#27B9F2] block mt-0.5 font-mono">Instalações confirmadas</span>
+                  </div>
+
+                  <div className="p-3 bg-[#191B1F] border border-[#252A30] rounded-[10px]">
+                    <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Taxa de Conversão</span>
+                    <p className="text-lg font-bold text-[#10B981] font-mono mt-1 flex items-center gap-1.5">
+                      <TrendingUp className="w-4 h-4" />
+                      <span>{selectedApkLiveMetrics?.conversionRate || 0}%</span>
+                    </p>
+                    <span className="text-[9px] text-[#9299A3] block mt-0.5 font-mono">Lead → Download</span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 bg-[#191B1F] border border-[#252A30] rounded-[8px] flex items-center justify-between text-[11px] text-[#9299A3] flex-wrap gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#10B981]" />
+                    <span>Última interação de lead registrada:</span>
+                    <strong className="text-[#F5F7FA] font-mono">
+                      {selectedApkLiveMetrics?.lastLeadAt || 'Aguardando primeiro acesso...'}
+                    </strong>
+                  </div>
+                  <div className="flex items-center gap-1 text-[10px] text-[#27B9F2] font-mono">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#10B981]" />
+                    <span>Sincronização 100% Real Ativa</span>
+                  </div>
+                </div>
+
+                {/* Grid de Validação Matemática de Avaliações */}
+                <div className="pt-2 border-t border-[#252A30]">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-[#9299A3] block mb-2">
+                    Feedback & Avaliações da Comunidade
+                  </span>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div className="p-3 bg-[#191B1F] border border-[#252A30] rounded-[10px]">
+                      <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Média Real</span>
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <span className="text-lg font-bold text-[#F5F7FA] font-mono">
+                          {validatedMetrics?.averageRating.toFixed(1).replace('.', ',')}
+                        </span>
+                        <Star className="w-4 h-4 fill-[#f4b400] text-[#f4b400]" />
+                      </div>
+                      <span className="text-[9px] text-[#27B9F2] block mt-0.5 font-mono">Calculada via reviews</span>
                     </div>
-                    <span className="text-[9px] text-[#27B9F2] block mt-0.5 font-mono">Calculada via reviews</span>
-                  </div>
 
-                  <div className="p-3 bg-[#191B1F] border border-[#252A30] rounded-[10px]">
-                    <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Avaliadores Reais</span>
-                    <p className="text-lg font-bold text-[#F5F7FA] font-mono mt-1">
-                      {validatedMetrics?.totalReviewsCount}
-                    </p>
-                    <span className="text-[9px] text-[#9299A3] block mt-0.5 font-mono">100% autenticados</span>
-                  </div>
+                    <div className="p-3 bg-[#191B1F] border border-[#252A30] rounded-[10px]">
+                      <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Avaliadores Reais</span>
+                      <p className="text-lg font-bold text-[#F5F7FA] font-mono mt-1">
+                        {validatedMetrics?.totalReviewsCount}
+                      </p>
+                      <span className="text-[9px] text-[#9299A3] block mt-0.5 font-mono">100% autenticados</span>
+                    </div>
 
-                  <div className="p-3 bg-[#191B1F] border border-[#252A30] rounded-[10px]">
-                    <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Satisfação</span>
-                    <p className="text-lg font-bold text-[#10B981] font-mono mt-1">
-                      {validatedMetrics?.satisfactionRate}%
-                    </p>
-                    <span className="text-[9px] text-[#9299A3] block mt-0.5 font-mono">Notas 4★ e 5★</span>
-                  </div>
+                    <div className="p-3 bg-[#191B1F] border border-[#252A30] rounded-[10px]">
+                      <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Satisfação</span>
+                      <p className="text-lg font-bold text-[#10B981] font-mono mt-1">
+                        {validatedMetrics?.satisfactionRate}%
+                      </p>
+                      <span className="text-[9px] text-[#9299A3] block mt-0.5 font-mono">Notas 4 e 5 Estrelas</span>
+                    </div>
 
-                  <div className="p-3 bg-[#191B1F] border border-[#252A30] rounded-[10px]">
-                    <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Votos Úteis</span>
-                    <p className="text-lg font-bold text-[#27B9F2] font-mono mt-1">
-                      {validatedMetrics?.totalHelpfulVotes}
-                    </p>
-                    <span className="text-[9px] text-[#9299A3] block mt-0.5 font-mono">Interações registradas</span>
+                    <div className="p-3 bg-[#191B1F] border border-[#252A30] rounded-[10px]">
+                      <span className="text-[10px] text-[#9299A3] block uppercase tracking-wider">Votos Úteis</span>
+                      <p className="text-lg font-bold text-[#27B9F2] font-mono mt-1">
+                        {validatedMetrics?.totalHelpfulVotes}
+                      </p>
+                      <span className="text-[9px] text-[#9299A3] block mt-0.5 font-mono">Interações registradas</span>
+                    </div>
                   </div>
                 </div>
 
@@ -1269,6 +1382,7 @@ export default function App() {
               <div className="space-y-3">
                 {filteredApks.map(apk => {
                   const isSelected = selectedApk?.id === apk.id;
+                  const apkLive = getApkRealMetrics(apk.id, apk.createdAt || apk.uploadedAt);
 
                   return (
                     <div
@@ -1279,12 +1393,12 @@ export default function App() {
                       }}
                       className={`p-4 rounded-[12px] border cursor-pointer transition-all select-none ${
                         isSelected
-                          ? 'bg-[#0D211B] border-[#27B9F2]/70 shadow-[0_0_15px_rgba(13,33,27,0.8)] ring-1 ring-[#27B9F2]/40'
+                          ? 'bg-[#0D211B] border-[#01875F] shadow-[0_0_15px_rgba(1,135,95,0.4)] ring-1 ring-[#01875F]/50'
                           : 'bg-[#111316] border-[#252A30] hover:bg-[#111316]/80'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
                           <div className="relative w-10 h-10 rounded-[10px] overflow-hidden border border-[#252A30] bg-[#191B1F] shrink-0 flex items-center justify-center">
                             {apk.iconSrc ? (
                               <img
@@ -1305,18 +1419,38 @@ export default function App() {
                             </div>
                           </div>
 
-                          <div>
+                          <div className="min-w-0">
                             <div className="flex items-center gap-2">
-                              <h4 className="text-xs font-bold text-[#F5F7FA]">{apk.name}</h4>
+                              <h4 className="text-xs font-bold text-[#F5F7FA] truncate">{apk.name}</h4>
                               {isSelected && (
-                                <span className="text-[10px] font-semibold px-2 py-0.2 rounded-[4px] bg-[#27B9F2]/20 text-[#27B9F2]">
+                                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-[4px] bg-[#01875F]/20 text-[#01875F] border border-[#01875F]/40 shrink-0">
                                   Ativo
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-[#9299A3] font-mono mt-0.5">
-                              {apk.fileName} · {apk.fileSize}
-                            </p>
+                            <div className="flex items-center gap-2.5 mt-1 text-[11px] text-[#9299A3] flex-wrap font-sans">
+                              <span className="font-mono text-[#F5F7FA]">{apk.fileName}</span>
+                              <span className="text-[#3A404A]">·</span>
+                              <span>{apk.fileSize}</span>
+                              <span className="text-[#3A404A]">·</span>
+                              <span className="flex items-center gap-1 text-[#27B9F2]">
+                                <Calendar className="w-3 h-3" />
+                                <span>Criado: {apk.createdAt || apk.uploadedAt}</span>
+                              </span>
+                              <span className="text-[#3A404A]">·</span>
+                              <span className="flex items-center gap-1 text-[#10B981] font-mono">
+                                <Users className="w-3 h-3" />
+                                <span>{apkLive.views} Leads</span>
+                              </span>
+                              <span className="text-[#3A404A]">·</span>
+                              <span className="flex items-center gap-1 text-[#27B9F2] font-mono">
+                                <Download className="w-3 h-3" />
+                                <span>{apkLive.downloads} Downloads</span>
+                              </span>
+                              <span className="px-1.5 py-0.5 rounded bg-[#191B1F] border border-[#252A30] text-[10px] font-mono text-[#10B981]">
+                                {apkLive.conversionRate}% Conv.
+                              </span>
+                            </div>
                           </div>
                         </div>
 

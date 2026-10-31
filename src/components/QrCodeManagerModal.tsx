@@ -365,10 +365,11 @@ export function QrCodeManagerModal({
                 )}
               </div>
 
-              {/* Informação para o Lead */}
-              <p className="text-[11px] text-[#9299A3] text-center mt-3 max-w-[300px] leading-relaxed">
-                📱 O lead aponta a câmera do smartphone para esta imagem e o download seguro do APK é acionado imediatamente.
-              </p>
+              {/* Informação para o Lead com Ícone Vetorial */}
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#9299A3] text-center mt-3 max-w-[320px] leading-relaxed">
+                <Smartphone className="w-3.5 h-3.5 text-[#27B9F2] shrink-0" />
+                <span>O lead aponta a câmera do smartphone para esta imagem e o download seguro do APK é acionado imediatamente.</span>
+              </div>
             </div>
 
             {/* BARRA DE EXPORTAÇÃO COMPLETA: PNG, JPG, SVG, PDF E COPIAR */}
