@@ -65,6 +65,7 @@ import {
 } from './data/reviewerAvatars';
 import { calculateValidatedMetrics, calculateRealSha256, generateApkChecksum } from './utils/apkMetrics';
 import { generateDownloadToken, generateQrSlug, sanitizeAppNameForUrl } from './utils/crypto';
+import { generateAsoCopy } from './utils/asoCopyGenerator';
 
 export default function App() {
   const [apks, setApks] = useState<ApkItem[]>(INITIAL_APKS);
@@ -257,36 +258,28 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
-  // Gerador de Copywriting Corporativo ASO Oficial (Determinístico e 100% Real)
+  // Gerador de Copywriting Corporativo ASO Oficial (Determinístico, 100% Real e sem Falhas no Vercel)
   const handleGenerateOfficialCopy = async () => {
     if (!selectedApk) return;
     setIsGeneratingDesc(true);
     showToast('Estruturando Copy ASO', `Processando texto oficial para "${selectedApk.name}"...`, 'info');
 
     try {
-      const res = await fetch('/api/generate-description', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          appName: selectedApk.name,
-          company: selectedApk.company,
-          category: selectedApk.category,
-          fileName: selectedApk.fileName,
-          fileSize: selectedApk.fileSize,
-          tone: copyTone,
-          highlights: copyHighlights.trim() || undefined,
-        }),
+      // Simula uma transição suave e fluida
+      await new Promise((resolve) => setTimeout(resolve, 350));
+
+      const generatedCopy = generateAsoCopy({
+        appName: selectedApk.name,
+        company: selectedApk.company,
+        category: selectedApk.category,
+        fileName: selectedApk.fileName,
+        fileSize: selectedApk.fileSize,
+        tone: copyTone,
+        highlights: copyHighlights.trim() || undefined,
       });
 
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-      if (data.description) {
-        updateSelectedApk({ description: data.description });
+      if (generatedCopy) {
+        updateSelectedApk({ description: generatedCopy });
         showToast(
           'Copywriting ASO Estruturado',
           'Descrição corporativa oficial sincronizada com a Play Store e smartphone.',
