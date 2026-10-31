@@ -228,21 +228,7 @@ export default function App() {
 
   // Atualização inteligente do Título, Meta Tags e Open Graph para redes sociais (WhatsApp, Instagram, etc.)
   useEffect(() => {
-    if (typeof window === 'undefined' || !selectedApk) return;
-
-    const dynamicTitle =
-      viewMode === 'admin'
-        ? `${selectedApk.name} · Gerenciador de APKs Blindados`
-        : `${selectedApk.name} - Download Oficial Google Play`;
-
-    document.title = dynamicTitle;
-
-    const dynamicDesc = selectedApk.description
-      ? selectedApk.description.slice(0, 155).replace(/\n/g, ' ') + '...'
-      : `Baixe o aplicativo oficial ${selectedApk.name} (${selectedApk.company}). Distribuição blindada e verificada pelo Google Play Protect.`;
-
-    const dynamicUrl = window.location.href;
-    const dynamicImage = selectedApk.iconSrc || `${window.location.origin}/favicon.svg`;
+    if (typeof window === 'undefined') return;
 
     const setMetaTag = (attr: 'name' | 'property', key: string, value: string) => {
       let el = document.querySelector(`meta[${attr}="${key}"]`);
@@ -254,14 +240,37 @@ export default function App() {
       el.setAttribute('content', value);
     };
 
+    // No modo ADMIN, o título do sistema permanece corporativo e neutro
+    if (viewMode === 'admin') {
+      document.title = 'APK Studio Enterprise · Gestão Oficial de APKs';
+      setMetaTag('name', 'description', 'Gestão Oficial de APKs, QR Code Avançado e Links Criptografados.');
+      setMetaTag('property', 'og:title', 'APK Studio Enterprise · Gestão Oficial de APKs');
+      setMetaTag('property', 'og:description', 'Gestão Oficial de APKs, QR Code Avançado e Links Criptografados.');
+      setMetaTag('name', 'twitter:title', 'APK Studio Enterprise');
+      return;
+    }
+
+    // Apenas nas telas de download oficial do lead (link ou QR Code) sincroniza com o APK ativo
+    if (!selectedApk) return;
+
+    const leadPageTitle = `${selectedApk.name} – Apps no Google Play`;
+    document.title = leadPageTitle;
+
+    const dynamicDesc = selectedApk.description
+      ? selectedApk.description.slice(0, 155).replace(/\n/g, ' ') + '...'
+      : `Baixe o aplicativo oficial ${selectedApk.name} (${selectedApk.company}). Distribuição blindada e verificada pelo Google Play Protect.`;
+
+    const dynamicUrl = window.location.href;
+    const dynamicImage = selectedApk.iconSrc || `${window.location.origin}/favicon.svg`;
+
     setMetaTag('name', 'description', dynamicDesc);
-    setMetaTag('property', 'og:title', dynamicTitle);
+    setMetaTag('property', 'og:title', leadPageTitle);
     setMetaTag('property', 'og:description', dynamicDesc);
     setMetaTag('property', 'og:image', dynamicImage);
     setMetaTag('property', 'og:url', dynamicUrl);
     setMetaTag('property', 'og:type', 'website');
     setMetaTag('property', 'og:site_name', 'Google Play');
-    setMetaTag('name', 'twitter:title', dynamicTitle);
+    setMetaTag('name', 'twitter:title', leadPageTitle);
     setMetaTag('name', 'twitter:description', dynamicDesc);
     setMetaTag('name', 'twitter:image', dynamicImage);
     setMetaTag('name', 'twitter:card', 'summary_large_image');
@@ -1513,8 +1522,9 @@ export default function App() {
                 </h3>
 
                 <button
+                  type="button"
                   onClick={handleCreateNewApk}
-                  className="px-3 py-1.5 bg-[#27B9F2] hover:bg-[#38c8ff] text-[#08090B] rounded-[8px] text-xs font-bold transition-all"
+                  className="px-3 py-1.5 bg-[#27B9F2] hover:bg-[#38c8ff] text-[#08090B] rounded-[8px] text-xs font-bold transition-all cursor-pointer shadow-sm"
                 >
                   + Anexar Outro APK
                 </button>

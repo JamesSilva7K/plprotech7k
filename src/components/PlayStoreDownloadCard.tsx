@@ -3,7 +3,6 @@ import {
   Download,
   Share2,
   Bookmark,
-  RotateCcw,
   CheckCircle2,
   X,
   ShieldCheck,
@@ -13,6 +12,7 @@ import {
 import { ApkItem } from '../types/apk';
 import { PlayProtectShield } from './PlayProtectShield';
 import { useRealtimeDownload } from '../utils/useRealtimeDownload';
+import { executeAndroidApk } from '../utils/apkExecutor';
 
 interface PlayStoreDownloadCardProps {
   apk: ApkItem;
@@ -38,7 +38,6 @@ export const PlayStoreDownloadCard: React.FC<PlayStoreDownloadCardProps> = ({
     etaSeconds,
     startDownload,
     cancelDownload,
-    uninstallApp,
     openApp,
   } = useRealtimeDownload({
     apk,
@@ -205,27 +204,18 @@ export const PlayStoreDownloadCard: React.FC<PlayStoreDownloadCardProps> = ({
       {/* 4. STATE: INSTALLED */}
       {stage === 'installed' && (
         <div className="space-y-3 animate-fadeIn">
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={uninstallApp}
-              className={`flex-1 border border-[#dadce0] hover:bg-[#f8f9fa] active:bg-[#f1f3f4] text-[#01875f] rounded-full font-medium font-['Google_Sans',sans-serif] flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
-                isCompact ? 'py-2 text-xs' : 'py-3 text-sm'
-              }`}
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              <span>Desinstalar</span>
-            </button>
-
-            <button
-              onClick={openApp}
-              className={`flex-1 bg-[#01875f] hover:bg-[#017a56] active:bg-[#005e42] text-white rounded-full font-medium font-['Google_Sans',sans-serif] flex items-center justify-center gap-1.5 shadow-[0_2px_8px_rgba(1,135,95,0.25)] transition-all cursor-pointer active:scale-[0.99] ${
-                isCompact ? 'py-2 text-xs' : 'py-3 text-sm'
-              }`}
-            >
-              <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
-              <span>Abrir</span>
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              openApp();
+              executeAndroidApk(apk, (title, desc) => onToast(`${title}: ${desc}`));
+            }}
+            className={`w-full bg-[#01875f] hover:bg-[#017a56] active:bg-[#005e42] text-white rounded-full font-medium font-['Google_Sans',sans-serif] flex items-center justify-center gap-2 shadow-[0_2px_10px_rgba(1,135,95,0.3)] transition-all cursor-pointer active:scale-[0.99] ${
+              isCompact ? 'py-2.5 text-xs' : 'py-3.5 text-sm font-bold'
+            }`}
+          >
+            <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+            <span>Abrir</span>
+          </button>
 
           <div className="flex items-center justify-between text-[#5f6368] pt-0.5 border-t border-[#f1f3f4]">
             <div className="flex items-center gap-1.5">

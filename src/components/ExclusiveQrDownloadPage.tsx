@@ -21,6 +21,7 @@ import { ApkItem } from '../types/apk';
 import { GooglePlayLogo } from './GooglePlayLogo';
 import { generateQrCodePng, QrCodeConfig } from '../utils/qrGenerator';
 import { recordLeadVisit, recordLeadDownload } from '../utils/realMetricsTracker';
+import { executeAndroidApk } from '../utils/apkExecutor';
 
 interface ExclusiveQrDownloadPageProps {
   apk: ApkItem;
@@ -285,24 +286,40 @@ export function ExclusiveQrDownloadPage({
             )}
 
             {downloadSuccess && (
-              <div className="p-4 rounded-[16px] bg-[#E6F4EA] border border-[#CEEAD6] flex items-center justify-between gap-4">
+              <div className="p-4 rounded-[16px] bg-[#E6F4EA] border border-[#CEEAD6] flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[#137333] text-white flex items-center justify-center shrink-0">
-                    <Check className="w-4 h-4 stroke-[3]" />
+                  <div className="w-9 h-9 rounded-full bg-[#137333] text-white flex items-center justify-center shrink-0 shadow-sm">
+                    <Check className="w-5 h-5 stroke-[3]" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-[#137333]">Instalação Pronta!</p>
-                    <p className="text-[11px] text-[#5F6368]">
-                      Toque na notificação de download do seu aparelho para abrir {apk.name}.
+                    <p className="text-sm font-bold text-[#137333]">Download Concluído com Sucesso!</p>
+                    <p className="text-xs text-[#5F6368]">
+                      Toque em "Abrir" para iniciar a instalação no seu aparelho Android.
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={handleStartDownload}
-                  className="px-4 py-2 bg-white text-[#137333] hover:bg-[#F1F3F4] text-xs font-bold rounded-[8px] border border-[#CEEAD6] transition-colors cursor-pointer"
-                >
-                  Baixar Novamente
-                </button>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      executeAndroidApk(apk, (title, desc) => onShowToast(title, desc, 'success'));
+                    }}
+                    className="flex-1 sm:flex-none px-6 py-2.5 bg-[#01875F] hover:bg-[#029E6F] text-white font-bold text-xs rounded-full shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+                  >
+                    <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                    <span>Abrir APK</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleStartDownload}
+                    className="px-3 py-2.5 bg-white text-[#5F6368] hover:text-[#202124] text-xs font-semibold rounded-full border border-[#DADCE0] transition-colors cursor-pointer"
+                    title="Baixar novamente o arquivo"
+                  >
+                    Repetir
+                  </button>
+                </div>
               </div>
             )}
           </div>
