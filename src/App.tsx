@@ -74,8 +74,52 @@ import { generateAsoCopy } from './utils/asoCopyGenerator';
 import { getApkRealMetrics, resetApkRealMetrics, ApkLiveMetrics } from './utils/realMetricsTracker';
 
 export default function App() {
-  const [apks, setApks] = useState<ApkItem[]>(INITIAL_APKS);
-  const [selectedApkId, setSelectedApkId] = useState<string>(INITIAL_APKS[0]?.id || '');
+  const [apks, setApks] = useState<ApkItem[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('apk_studio_managed_apks');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            // Elimina APKs mock antigos para garantir apenas dados 100% reais
+            const hasLegacy = parsed.some(
+              (a: ApkItem) =>
+                a.name === 'Braspress Transportadora' ||
+                a.name === 'Novasphere IPTV Pro' ||
+                a.name === 'FinTrack Digital Wallet'
+            );
+            if (!hasLegacy) {
+              return parsed;
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar APKs salvos:', e);
+      }
+    }
+    return INITIAL_APKS;
+  });
+
+  const [selectedApkId, setSelectedApkId] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const savedId = localStorage.getItem('apk_studio_selected_apk_id');
+      if (savedId) return savedId;
+    }
+    return INITIAL_APKS[0]?.id || '';
+  });
+
+  // Persiste a lista de APKs no LocalStorage em tempo real
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('apk_studio_managed_apks', JSON.stringify(apks));
+        if (selectedApkId) {
+          localStorage.setItem('apk_studio_selected_apk_id', selectedApkId);
+        }
+      } catch {}
+    }
+  }, [apks, selectedApkId]);
+
   const [viewMode, setViewMode] = useState<'admin' | 'lead-fullscreen' | 'qr-exclusive'>('admin');
   const [searchQuery, setSearchQuery] = useState('');
   const [phoneScale, setPhoneScale] = useState<number>(0.92);

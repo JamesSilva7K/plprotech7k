@@ -1,5 +1,13 @@
 // High-fidelity standalone base64 SVG app icons that load instantly with zero external network dependencies
 
+export const ICON_NIO_FIBRA = `data:image/svg+xml;utf8,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="28" fill="#14D855"/>
+  <rect x="2" y="2" width="124" height="124" rx="26" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+  <text x="64" y="78" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="44" font-weight="900" fill="#000000" text-anchor="middle" letter-spacing="-2">nio</text>
+</svg>
+`)}`;
+
 export const ICON_BRASPRESS = `data:image/svg+xml;utf8,${encodeURIComponent(`
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <defs>
