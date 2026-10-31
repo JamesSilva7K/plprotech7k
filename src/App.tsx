@@ -59,6 +59,7 @@ import { GooglePlayLogo } from './components/GooglePlayLogo';
 import { generatePlayStoreHtml } from './utils/exportTemplateHtml';
 import { QrCodeManagerModal } from './components/QrCodeManagerModal';
 import { ExclusiveQrDownloadPage } from './components/ExclusiveQrDownloadPage';
+import { FinalizedPageModal } from './components/FinalizedPageModal';
 import {
   AVATAR_CARLOS,
   AVATAR_FERNANDA,
@@ -143,6 +144,16 @@ export default function App() {
   const [qrModalApk, setQrModalApk] = useState<ApkItem | null>(null);
   const [exclusiveChannel, setExclusiveChannel] = useState<'link' | 'qrcode'>('qrcode');
   const [exclusiveSignature, setExclusiveSignature] = useState<string>('');
+
+  // Modal de Finalização do Processo & Central de Envio
+  const [isFinalizedModalOpen, setIsFinalizedModalOpen] = useState(false);
+  const [finalizedModalApk, setFinalizedModalApk] = useState<ApkItem | null>(null);
+
+  const handleOpenFinalizedModal = (apk: ApkItem) => {
+    setFinalizedModalApk(apk);
+    setIsFinalizedModalOpen(true);
+    showToast('Processo Finalizado', `Página oficial e QR Code prontos para "${apk.name}".`, 'success');
+  };
 
   // Avatar Photo Picker Modal State
   const [editingAvatarReviewIdx, setEditingAvatarReviewIdx] = useState<number | null>(null);
@@ -659,12 +670,23 @@ export default function App() {
         <div className="flex items-center gap-2.5">
           {selectedApk && (
             <button
-              onClick={() => handleOpenQrModal(selectedApk)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-[#01875F] hover:bg-[#029e6f] text-white rounded-[10px] text-xs font-bold transition-all shadow-[0_2px_10px_rgba(1,135,95,0.3)] cursor-pointer"
-              title="Gerar e personalizar QR Code avançado com link blindado"
+              onClick={() => handleOpenFinalizedModal(selectedApk)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-[#01875F] to-[#00b074] hover:from-[#029e6f] hover:to-[#02c784] text-white rounded-[10px] text-xs font-bold transition-all shadow-[0_2px_12px_rgba(1,135,95,0.4)] cursor-pointer"
+              title="Finalizar processo, gerar link oficial e visualizar o card com QR code para envio ao lead"
             >
-              <QrCode className="w-4 h-4 stroke-[2.5]" />
-              <span>QR Code & Link Blindado</span>
+              <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+              <span>Finalizar & Obter Link</span>
+            </button>
+          )}
+
+          {selectedApk && (
+            <button
+              onClick={() => handleOpenQrModal(selectedApk)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-[#191B1F] hover:bg-[#252A30] text-[#F5F7FA] border border-[#252A30] rounded-[10px] text-xs font-semibold transition-all cursor-pointer"
+              title="Personalizar molduras de QR Code avançado"
+            >
+              <QrCode className="w-4 h-4 text-[#27B9F2]" />
+              <span className="hidden xl:inline">Molduras QR</span>
             </button>
           )}
 
@@ -1256,6 +1278,30 @@ export default function App() {
                     <span>Versão: <strong className="text-[#F5F7FA] font-mono">{selectedApk.versionName || '1.0.0'} (API 34)</strong></span>
                   </div>
                 </div>
+
+                {/* Banner de Finalização & Central de Envio ao Lead */}
+                <div className="p-4 rounded-[14px] bg-gradient-to-r from-[#0D211B] via-[#111A17] to-[#16181D] border border-[#01875F]/50 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-[10px] bg-[#01875F]/20 border border-[#01875F]/40 flex items-center justify-center text-[#01875F] shrink-0">
+                      <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-[#F5F7FA]">Página Oficial Pronta para Distribuição?</h4>
+                      <p className="text-[11px] text-[#9299A3]">
+                        Finalize o processo para visualizar o card de publicação, obter o link blindado e o QR Code oficial de envio ao lead.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleOpenFinalizedModal(selectedApk)}
+                    className="px-4 py-2.5 bg-gradient-to-r from-[#01875F] to-[#00b074] hover:from-[#029e6f] hover:to-[#02c784] text-white rounded-[10px] text-xs font-bold transition-all flex items-center gap-2 shadow-[0_2px_12px_rgba(1,135,95,0.4)] shrink-0 cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                    <span>Finalizar & Obter Link Oficial</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -1549,24 +1595,36 @@ export default function App() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                           <button
+                            type="button"
+                            onClick={() => handleOpenFinalizedModal(apk)}
+                            className="px-3 py-1.5 bg-[#01875F]/20 hover:bg-[#01875F]/35 text-[#01875F] border border-[#01875F]/50 rounded-[8px] text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
+                            title="Abrir card oficial, link criptografado e QR Code deste APK"
+                          >
+                            <Share2 className="w-3.5 h-3.5" />
+                            <span>Link & QR Code</span>
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => handleOpenQrModal(apk)}
-                            className="p-1.5 text-[#01875F] hover:bg-[#01875F]/15 rounded-[6px] border border-[#01875F]/30"
-                            title="Gerar QR Code & Link Blindado"
+                            className="p-1.5 text-[#27B9F2] hover:bg-[#27B9F2]/15 rounded-[6px] border border-[#27B9F2]/30 cursor-pointer"
+                            title="Personalizar molduras do QR Code"
                           >
                             <QrCode className="w-4 h-4" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDownloadFile(apk)}
-                            className="p-1.5 text-[#9299A3] hover:text-[#27B9F2] rounded-[6px]"
+                            className="p-1.5 text-[#9299A3] hover:text-[#27B9F2] rounded-[6px] cursor-pointer"
                             title="Baixar APK"
                           >
                             <Download className="w-4 h-4" />
                           </button>
                           <button
+                            type="button"
                             onClick={() => setApkToDelete(apk)}
-                            className="p-1.5 text-[#9299A3] hover:text-[#F04444] rounded-[6px]"
+                            className="p-1.5 text-[#9299A3] hover:text-[#F04444] rounded-[6px] cursor-pointer"
                             title="Excluir"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -1635,6 +1693,17 @@ export default function App() {
           )}
         </div>
       </div>
+
+      {/* Finalized Page & Lead Delivery Central Modal */}
+      {finalizedModalApk && (
+        <FinalizedPageModal
+          apk={finalizedModalApk}
+          isOpen={isFinalizedModalOpen}
+          onClose={() => setIsFinalizedModalOpen(false)}
+          onShowToast={showToast}
+          onOpenAdvancedCustomizer={targetApk => handleOpenQrModal(targetApk)}
+        />
+      )}
 
       {/* QR Code Manager Modal */}
       {qrModalApk && (
