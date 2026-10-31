@@ -51,7 +51,7 @@ import {
 } from 'lucide-react';
 import { ApkItem, ReviewItem } from './types/apk';
 import { INITIAL_APKS } from './data/mockApks';
-import { PRESET_ICONS, generateVectorAppIcon } from './data/appIcons';
+import { generateVectorAppIcon } from './data/appIcons';
 import { ToastContainer, ToastMessage } from './components/Toast';
 import { PhoneMockup } from './components/PhoneMockup';
 import { PlayStorePage } from './components/PlayStorePage';
@@ -81,15 +81,20 @@ export default function App() {
         if (saved) {
           const parsed = JSON.parse(saved);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            // Elimina APKs mock antigos para garantir apenas dados 100% reais
-            const hasLegacy = parsed.some(
+            // Elimina APKs mock antigos para garantir que o sistema nunca fique preso a NIO ou marcas de teste
+            const legacyNames = [
+              'NIO Fibra Internet',
+              'Braspress Transportadora',
+              'Novasphere IPTV Pro',
+              'FinTrack Digital Wallet',
+            ];
+            const filtered = parsed.filter(
               (a: ApkItem) =>
-                a.name === 'Braspress Transportadora' ||
-                a.name === 'Novasphere IPTV Pro' ||
-                a.name === 'FinTrack Digital Wallet'
+                !legacyNames.includes(a.name) &&
+                !['apk-nio', 'apk-1', 'apk-2', 'apk-3'].includes(a.id)
             );
-            if (!hasLegacy) {
-              return parsed;
+            if (filtered.length > 0) {
+              return filtered;
             }
           }
         }
@@ -103,7 +108,9 @@ export default function App() {
   const [selectedApkId, setSelectedApkId] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       const savedId = localStorage.getItem('apk_studio_selected_apk_id');
-      if (savedId) return savedId;
+      if (savedId && !['apk-nio', 'apk-1', 'apk-2', 'apk-3'].includes(savedId)) {
+        return savedId;
+      }
     }
     return INITIAL_APKS[0]?.id || '';
   });
@@ -139,6 +146,8 @@ export default function App() {
 
   // Avatar Photo Picker Modal State
   const [editingAvatarReviewIdx, setEditingAvatarReviewIdx] = useState<number | null>(null);
+  const [avatarSearch, setAvatarSearch] = useState('');
+  const [avatarCategory, setAvatarCategory] = useState<string>('Todos');
 
   // Modais & Confirmações
   const [apkToDelete, setApkToDelete] = useState<ApkItem | null>(null);
@@ -308,15 +317,30 @@ export default function App() {
     const now = new Date();
     const dateFormatted = `${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 
+    const isDefaultName =
+      !selectedApk?.name ||
+      selectedApk.name === 'Novo Aplicativo' ||
+      selectedApk.name === 'Aplicativo Oficial' ||
+      selectedApk.name === 'NIO Fibra Internet' ||
+      selectedApk.name === 'Braspress Transportadora';
+
     let autoName = selectedApk?.name;
-    if (!autoName || autoName === 'Novo Aplicativo') {
+    if (isDefaultName) {
       autoName = file.name
         .replace(/\.(apk|xapk|zip)$/i, '')
         .replace(/[-_]/g, ' ')
-        .replace(/\b\w/g, l => l.toUpperCase());
+        .trim()
+        .replace(/\b\w/g, l => l.toUpperCase()) || 'Meu Aplicativo';
     }
 
-    const nextIcon = selectedApk?.iconSrc || generateVectorAppIcon(autoName, selectedApk?.category || 'Negócios');
+    const safeSlug = sanitizeAppNameForUrl(autoName);
+    const derivedPackage = isDefaultName
+      ? `com.${safeSlug.replace(/-/g, '.')}.app`
+      : selectedApk?.packageName || `com.${safeSlug.replace(/-/g, '.')}.app`;
+
+    const nextIcon = isDefaultName
+      ? generateVectorAppIcon(autoName, selectedApk?.category || 'Ferramentas & Produtividade')
+      : (selectedApk?.iconSrc || generateVectorAppIcon(autoName, selectedApk?.category || 'Ferramentas & Produtividade'));
 
     showToast('Processando Integridade', `Calculando assinatura SHA-256 real de ${file.name}...`, 'info');
 
@@ -327,6 +351,7 @@ export default function App() {
 
       updateSelectedApk({
         name: autoName,
+        packageName: derivedPackage,
         fileName: file.name,
         fileSize: `${sizeMb} MB`,
         fileBlob: file,
@@ -852,7 +877,7 @@ export default function App() {
                       type="text"
                       value={selectedApk.name}
                       onChange={e => updateSelectedApk({ name: e.target.value })}
-                      placeholder="Ex: Braspress Transportadora"
+                      placeholder="Ex: Meu Aplicativo Oficial"
                       className="w-full bg-[#191B1F] text-[#F5F7FA] text-xs rounded-[8px] px-3 py-2.5 border border-[#252A30] focus:border-[#27B9F2] focus:outline-none transition-colors font-medium"
                     />
                   </div>
@@ -867,7 +892,7 @@ export default function App() {
                       type="text"
                       value={selectedApk.company}
                       onChange={e => updateSelectedApk({ company: e.target.value })}
-                      placeholder="Ex: Braspress Transportes Urgentes"
+                      placeholder="Ex: Minha Empresa Tecnologia LTDA"
                       className="w-full bg-[#191B1F] text-[#F5F7FA] text-xs rounded-[8px] px-3 py-2.5 border border-[#252A30] focus:border-[#27B9F2] focus:outline-none transition-colors"
                     />
                   </div>
@@ -941,21 +966,38 @@ export default function App() {
 
                     <div className="flex-1 min-w-0 space-y-1">
                       <p className="text-xs font-semibold text-[#F5F7FA] truncate">
-                        {selectedApk.iconSrc ? 'Ícone Carregado & Ativo' : 'Ícone Padrão com Inicial'}
+                        {selectedApk.iconSrc ? 'Ícone Carregado & Ativo' : 'Ícone Automático com Inicial'}
                       </p>
                       <p className="text-[11px] text-[#9299A3]">
-                        Exibido na página Play Store, no centro do QR Code e na tela do smartphone.
+                        Exibido na página Play Store, no centro do QR Code e na tela de download do lead.
                       </p>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => iconInputRef.current?.click()}
-                      className="px-3 py-1.5 bg-[#27B9F2] hover:bg-[#38c8ff] text-[#08090B] rounded-[8px] text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 shrink-0"
-                    >
-                      <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
-                      <span>Upload Ícone</span>
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => iconInputRef.current?.click()}
+                        className="px-3 py-1.5 bg-[#27B9F2] hover:bg-[#38c8ff] text-[#08090B] rounded-[8px] text-xs font-bold transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>Upload Ícone</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newIcon = generateVectorAppIcon(selectedApk.name, selectedApk.category);
+                          updateSelectedApk({ iconSrc: newIcon });
+                          showToast('Ícone Vetorial Gerado', `Ícone adaptativo limpo gerado para "${selectedApk.name}".`, 'success');
+                        }}
+                        className="px-2.5 py-1.5 bg-[#191B1F] hover:bg-[#252A30] text-[#F5F7FA] border border-[#252A30] rounded-[8px] text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
+                        title="Gera ícone vetorial limpo com a letra inicial do app"
+                      >
+                        <Layers className="w-3.5 h-3.5 text-[#27B9F2]" />
+                        <span>Ícone Vetorial</span>
+                      </button>
+                    </div>
+
                     <input
                       ref={iconInputRef}
                       type="file"
@@ -965,48 +1007,6 @@ export default function App() {
                       }}
                       className="hidden"
                     />
-                  </div>
-
-                  {/* Preset Quick Selectors */}
-                  <div className="space-y-1.5">
-                    <span className="text-[11px] font-medium text-[#9299A3]">
-                      Modelos de Ícones Prontos (SVG Alta Resolução):
-                    </span>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {PRESET_ICONS.map((preset, idx) => {
-                        const isCurrent = selectedApk.iconSrc === preset.icon;
-                        return (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => {
-                              updateSelectedApk({ iconSrc: preset.icon });
-                              showToast('Ícone Selecionado', `Ícone "${preset.name}" aplicado com sucesso.`, 'success');
-                            }}
-                            className={`p-2 rounded-[8px] border text-left flex items-center gap-2 transition-all cursor-pointer ${
-                              isCurrent
-                                ? 'bg-[#0D211B] border-[#27B9F2] text-[#27B9F2] shadow-sm'
-                                : 'bg-[#191B1F] border-[#252A30] hover:border-[#27B9F2]/50 text-[#F5F7FA]'
-                            }`}
-                          >
-                            <img
-                              src={preset.icon}
-                              alt={preset.name}
-                              className="w-6 h-6 rounded-[6px] shrink-0 object-cover shadow-xs"
-                            />
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[11px] font-semibold truncate leading-tight">
-                                {preset.name}
-                              </p>
-                              <p className="text-[9px] text-[#9299A3] truncate">
-                                {preset.category}
-                              </p>
-                            </div>
-                            {isCurrent && <Check className="w-3 h-3 text-[#27B9F2] shrink-0" />}
-                          </button>
-                        );
-                      })}
-                    </div>
                   </div>
                 </div>
 
@@ -1690,15 +1690,17 @@ export default function App() {
       {/* Modal: Escolha de Foto Real para o Lead */}
       {editingAvatarReviewIdx !== null && selectedApk?.reviews[editingAvatarReviewIdx] && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-          <div className="w-full max-w-lg bg-[#111316] border border-[#252A30] rounded-[16px] p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3 border-b border-[#252A30]">
+          <div className="w-full max-w-2xl bg-[#111316] border border-[#252A30] rounded-[16px] p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between pb-3 border-b border-[#252A30] shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-[8px] bg-[#191B1F] border border-[#252A30] flex items-center justify-center text-[#27B9F2]">
                   <Camera className="w-4 h-4 text-[#27B9F2]" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-[#F5F7FA]">Foto Real do Lead / Avaliador</h3>
-                  <p className="text-[11px] text-[#9299A3]">Fotografia autêntica em alta resolução (100% pessoas reais)</p>
+                  <p className="text-[11px] text-[#9299A3]">
+                    Catálogo de {REAL_LEAD_AVATARS.length} pessoas reais em alta resolução com nomes e cargos brasileiros autênticos
+                  </p>
                 </div>
               </div>
               <button
@@ -1709,43 +1711,85 @@ export default function App() {
               </button>
             </div>
 
-            {/* Grid of Real Photographic Portraits */}
-            <div className="space-y-2">
-              <span className="text-[11px] font-semibold text-[#9299A3] block">
-                Galeria de Pessoas Reais (Fotografia Profissional):
-              </span>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {REAL_LEAD_AVATARS.map((lead, idx) => (
+            {/* Filtros Inteligentes: Busca e Categorias */}
+            <div className="space-y-2.5 shrink-0">
+              <div className="relative">
+                <Search className="w-4 h-4 text-[#9299A3] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <input
+                  type="text"
+                  value={avatarSearch}
+                  onChange={e => setAvatarSearch(e.target.value)}
+                  placeholder="Buscar lead por nome, cargo ou cidade..."
+                  className="w-full bg-[#191B1F] text-[#F5F7FA] text-xs rounded-[8px] pl-9 pr-3 py-2 border border-[#252A30] focus:border-[#27B9F2] focus:outline-none transition-colors"
+                />
+              </div>
+
+              {/* Categorias Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                {['Todos', 'Tecnologia', 'Operações', 'Gestão', 'Comercial', 'Finanças', 'Atendimento'].map(cat => (
                   <button
-                    key={idx}
+                    key={cat}
                     type="button"
-                    onClick={() => {
-                      const next = [...selectedApk.reviews];
-                      next[editingAvatarReviewIdx] = {
-                        ...next[editingAvatarReviewIdx],
-                        avatarUrl: lead.url,
-                      };
-                      updateSelectedApk({ reviews: next });
-                      showToast('Foto Atualizada', `Foto de ${lead.name} aplicada com sucesso.`, 'success');
-                      setEditingAvatarReviewIdx(null);
-                    }}
-                    className="p-2.5 rounded-[10px] bg-[#191B1F] border border-[#252A30] hover:border-[#27B9F2] hover:bg-[#191B1F]/80 flex flex-col items-center gap-2 text-center transition-all cursor-pointer group"
+                    onClick={() => setAvatarCategory(cat)}
+                    className={`px-2.5 py-1 rounded-[6px] text-[11px] font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                      avatarCategory === cat
+                        ? 'bg-[#27B9F2] text-[#08090B]'
+                        : 'bg-[#191B1F] text-[#9299A3] hover:text-[#F5F7FA] border border-[#252A30]'
+                    }`}
                   >
-                    <img
-                      src={lead.url}
-                      alt={lead.name}
-                      className="w-14 h-14 rounded-full object-cover border-2 border-[#252A30] group-hover:border-[#27B9F2] shadow-sm transition-all"
-                    />
-                    <div>
-                      <p className="text-[11px] font-bold text-[#F5F7FA] leading-tight truncate max-w-[85px]">
-                        {lead.name}
-                      </p>
-                      <p className="text-[9px] text-[#9299A3] truncate max-w-[85px] mt-0.5">
-                        {lead.role}
-                      </p>
-                    </div>
+                    {cat}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Grid Scrollável de Perfis Reais */}
+            <div className="flex-1 overflow-y-auto pr-1 min-h-[260px] max-h-[380px]">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {REAL_LEAD_AVATARS
+                  .filter(lead => {
+                    const matchesCategory = avatarCategory === 'Todos' || lead.category === avatarCategory;
+                    const q = avatarSearch.toLowerCase().trim();
+                    const matchesQuery =
+                      !q ||
+                      lead.name.toLowerCase().includes(q) ||
+                      lead.role.toLowerCase().includes(q) ||
+                      lead.city.toLowerCase().includes(q);
+                    return matchesCategory && matchesQuery;
+                  })
+                  .map(lead => (
+                    <button
+                      key={lead.id}
+                      type="button"
+                      onClick={() => {
+                        const next = [...selectedApk.reviews];
+                        next[editingAvatarReviewIdx] = {
+                          ...next[editingAvatarReviewIdx],
+                          name: lead.name,
+                          avatarUrl: lead.url,
+                        };
+                        updateSelectedApk({ reviews: next });
+                        showToast('Perfil Atualizado', `${lead.name} (${lead.role}) aplicado com sucesso.`, 'success');
+                        setEditingAvatarReviewIdx(null);
+                      }}
+                      className="p-2.5 rounded-[10px] bg-[#191B1F] border border-[#252A30] hover:border-[#27B9F2] hover:bg-[#191B1F]/90 flex flex-col items-center text-center transition-all cursor-pointer group"
+                    >
+                      <img
+                        src={lead.url}
+                        alt={lead.name}
+                        className="w-14 h-14 rounded-full object-cover border-2 border-[#252A30] group-hover:border-[#27B9F2] shadow-sm transition-all"
+                      />
+                      <p className="text-[11px] font-bold text-[#F5F7FA] leading-tight truncate w-full mt-2">
+                        {lead.name}
+                      </p>
+                      <p className="text-[9px] text-[#27B9F2] font-semibold truncate w-full mt-0.5">
+                        {lead.role}
+                      </p>
+                      <p className="text-[8px] text-[#9299A3] truncate w-full">
+                        {lead.city}
+                      </p>
+                    </button>
+                  ))}
               </div>
             </div>
 
