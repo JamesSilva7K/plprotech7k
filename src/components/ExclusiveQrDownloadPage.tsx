@@ -176,11 +176,23 @@ export function ExclusiveQrDownloadPage({
           </div>
 
           <button
+            onClick={() => {
+              const msg = `🚀 Baixe o aplicativo oficial *${apk.name}* (${apk.company}) verificado pelo Google Play Protect:\n\n${window.location.href}`;
+              window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+            }}
+            className="px-2.5 py-1.5 bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#128C7E] rounded-full text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+            title="Compartilhar no WhatsApp"
+          >
+            <Share2 className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">WhatsApp</span>
+          </button>
+
+          <button
             onClick={handleCopyShareLink}
             className="p-2 hover:bg-[#F1F3F4] text-[#5F6368] rounded-full transition-colors cursor-pointer"
             title="Compartilhar Link"
           >
-            {copiedLink ? <Check className="w-4 h-4 text-[#137333]" /> : <Share2 className="w-4 h-4" />}
+            {copiedLink ? <Check className="w-4 h-4 text-[#137333]" /> : <Copy className="w-4 h-4" />}
           </button>
         </div>
       </header>

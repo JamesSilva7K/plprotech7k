@@ -140,3 +140,4 @@ export function formatCurrentDateTime(): string {
   const now = new Date();
   return `${now.toLocaleDateString('pt-BR')} às ${now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
 }
+

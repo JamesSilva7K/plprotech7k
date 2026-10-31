@@ -20,7 +20,9 @@ import {
   Image as ImageIcon,
   FileText,
   Printer,
-  Sparkles,
+  Share2,
+  Send,
+  MessageCircle,
   Upload,
 } from 'lucide-react';
 import { ApkItem, QrCustomization } from '../types/apk';
@@ -767,6 +769,49 @@ export function QrCodeManagerModal({
                       className="px-3 py-1.5 bg-[#01875F] text-white rounded-[8px] text-xs font-bold"
                     >
                       {copiedLink ? 'Copiado!' : 'Copiar'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Compartilhamento Rápido em Redes Sociais com Prévia Oficial */}
+                <div className="p-4 rounded-[12px] bg-[#111317] border border-[#252A30] space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#F5F7FA] flex items-center gap-1.5 uppercase tracking-wider">
+                      <Share2 className="w-3.5 h-3.5 text-[#27B9F2]" />
+                      <span>Compartilhar com Lead (WhatsApp & Redes)</span>
+                    </span>
+                    <span className="text-[10px] text-[#10B981] font-mono">Meta Tags Dinâmicas Ativas</span>
+                  </div>
+
+                  <p className="text-[11px] text-[#9299A3] leading-relaxed">
+                    Ao enviar este link no WhatsApp, Instagram, Telegram ou Facebook, o card oficial do Google Play será exibido com ícone, nome e descrição de <strong className="text-[#F5F7FA]">{apk.name}</strong>.
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const msg = `🚀 Baixe o aplicativo oficial *${apk.name}* (${apk.company}) verificado pelo Google Play Protect:\n\n${directTargetUrl}`;
+                        window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+                        onShowToast('WhatsApp Aberto', 'Mensagem formatada com link blindado enviada para o WhatsApp.', 'success');
+                      }}
+                      className="px-3 py-2 bg-[#25D366]/15 hover:bg-[#25D366]/25 text-[#25D366] border border-[#25D366]/40 rounded-[8px] text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Enviar no WhatsApp</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const copyText = `📲 *${apk.name}* (${apk.company})\nBaixe a versão oficial verificada pelo Google Play Protect:\n🔗 ${directTargetUrl}`;
+                        navigator.clipboard.writeText(copyText);
+                        onShowToast('Texto Copiado', 'Texto pronto para colar no Instagram, WhatsApp ou Telegram.', 'success');
+                      }}
+                      className="px-3 py-2 bg-[#191B1F] hover:bg-[#252A30] text-[#F5F7FA] border border-[#252A30] rounded-[8px] text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    >
+                      <Copy className="w-4 h-4 text-[#27B9F2]" />
+                      <span>Copiar Texto Completo</span>
                     </button>
                   </div>
                 </div>

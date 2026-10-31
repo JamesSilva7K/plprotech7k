@@ -753,15 +753,31 @@ export async function copyQrImageToClipboard(config: QrCodeConfig): Promise<bool
 }
 
 /**
- * Dispara o download de um arquivo gerado
+ * Dispara o download de um arquivo gerado (suporta DataURL, SVG string e Blob)
  */
-export function triggerFileDownload(dataUrl: string, fileName: string): void {
+export function triggerFileDownload(content: string, fileName: string, extension?: string): void {
+  const ext = extension ? `.${extension.replace(/^\./, '')}` : '';
+  const finalName = fileName.endsWith(ext) ? fileName : `${fileName}${ext}`;
+
+  let href = content;
+  let isBlob = false;
+
+  if (extension === 'svg' && !content.startsWith('data:')) {
+    const blob = new Blob([content], { type: 'image/svg+xml;charset=utf-8' });
+    href = URL.createObjectURL(blob);
+    isBlob = true;
+  }
+
   const a = document.createElement('a');
-  a.href = dataUrl;
-  a.download = fileName;
+  a.href = href;
+  a.download = finalName;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+
+  if (isBlob) {
+    setTimeout(() => URL.revokeObjectURL(href), 1500);
+  }
 }
 
 // Aliases para retrocompatibilidade
